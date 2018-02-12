@@ -1,0 +1,17 @@
+[package]
+name = "emerald-ffi"
+version = "0.1.0"
+authors = ["Constantine Kryvomaz <ckryvomaz@gmail.com>"]
+license = "Apache-2.0"
+description = "FFI bindings for the emerald-rs crate."
+repository = "https://github.com/ethereumproject/emerald-rs"
+readme = "README.md"
+keywords = ["ethereum", "ffi", "crypto"]
+
+[lib]
+name = "emerald_ffi"
+crate-type = ["cdylib"]
+
+[dependencies]
+libc = "0.2"
+emerald-rs = "0.20"
