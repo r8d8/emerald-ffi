@@ -4,36 +4,58 @@
 extern crate emerald_rs;
 extern crate libc;
 
-use libc::{c_char, size_t, uint8_t, int32_t, uint32_t};
-use std::{ptr, slice};
-use std::ffi::CStr;
-use std::io::{Cursor, Write};
 use emerald_rs::keystore::KeyFile;
+use emerald_rs::Address;
+use libc::{c_uchar, size_t, int32_t, uint32_t, uint8_t};
+use std::{ptr, slice};
+use std::ffi::{CStr, CString};
+use std::io::{Cursor, Write};
 use std::mem::transmute;
 
 
-#[no_mangle]
-pub extern "C" fn signTransaction() -> bool {
+#[repr(C)]
+pub enum KdfDepthLevel {
+    Normal = 1024,
+    High = 8096,
+    Ultra = 262_144,
+}
 
+#[repr(C)]
+pub struct c_keyfile {
+    pub visible: bool,
+    pub name: *const c_uchar,
+    pub name_len: c_uint,
+    pub description: *const c_uchar,
+    pub description_len: c_uint,
+    pub address: c_address,
+    pub uuid: c_uuid,
+    pub crypto: c_crypto,
 }
 
 #[no_mangle]
-pub extern "C" fn generateAddress() -> bool {
-    emerald_rs::Address
-}
+pub extern "C" fn signTransaction() -> bool {}
 
 #[no_mangle]
-pub extern "C" fn createKeyfile(passphrase: &str,
-                                sec_level: &KdfDepthLevel,
-                                name: String,
-                                description: String) -> *mut KeyFile {
-
+pub extern "C" fn createKeyfile(
+    passphrase: *const c_char,
+    sec_level: KdfDepthLevel,
+    name: *const c_char,
+    description: *const c_char,
+) -> *mut KeyFile {
+    let pass: String = unsafe { CStr::from_ptr(passphrase).to_string_lossy().into_owned() };
+    let name: String = unsafe { CStr::from_ptr(name).to_string_lossy().into_owned() };
+    let desc: String = unsafe { CStr::from_ptr(description).to_string_lossy().into_owned() };
     unsafe {
-        transmute(Box::new(KeyFile::new(passphrase, sec_level, name, description)))
+        transmute(Box::new(KeyFile::new(
+            pass,
+            sec_level,
+            name,
+            desc,
+        )))
     }
 }
 
 #[no_mangle]
-pub extern fn deleteKeyfile(ptr: *mut KeyFile) {
-    let _kf: Box<KeyFile> = unsafe{ transmute(ptr) };
+pub extern "C" fn deleteKeyfile(ptr: *mut KeyFile) {
+    let _kf: Box<KeyFile> = unsafe { transmute(ptr) };
 }
